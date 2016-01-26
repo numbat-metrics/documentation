@@ -1,11 +1,14 @@
 # The numbat system
 
-The numbat repos:
+The numbat modules:
 
 * [numbat-emitter](https://github.com/numbat-metrics/numbat-emitter): a module you're intended to require anywhere you need it. Make an emitter object, hang onto it, emit metrics with it.  
 * [numbat-collector](https://github.com/numbat-metrics/numbat-collector): receiver that runs on every host  
 * [numbat-analyzer](https://github.com/numbat-metrics/numbat-analyzer): a server that accepts data streams from the collector & processes them
 * [numbat-influx](https://github.com/numbat-metrics/numbat-influx): an InfluxDB 0.9+ output sink for the collector
+* [numbat-redis](https://github.com/npm/numbat-redis): emit some interesting redis stats
+* [numbat-haproxy](https://github.com/npm/numbat-haproxy): watch what your haproxies are up to
+* [numbat-process](https://github.com/npm/numbat-process): emit periodic stats about your node process
 
 Design:
 
