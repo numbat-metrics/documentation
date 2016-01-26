@@ -1,33 +1,34 @@
 # The numbat system
 
+Numbat-powered metrics are in production at npm, allowing us to gather a lot of metrics from node services and view them in pretty charts.
+
 The numbat modules:
 
-* [numbat-emitter](https://github.com/numbat-metrics/numbat-emitter): a module you're intended to require anywhere you need it. Make an emitter object, hang onto it, emit metrics with it.  
+* [numbat-emitter](https://github.com/numbat-metrics/numbat-emitter): a module you're intended to require anywhere you need it. Make an emitter object, then emit metrics with it by calling `process.emit('metric', {name: 'foo'})`.  
 * [numbat-collector](https://github.com/numbat-metrics/numbat-collector): receiver that runs on every host  
 * [numbat-analyzer](https://github.com/numbat-metrics/numbat-analyzer): a server that accepts data streams from the collector & processes them
 * [numbat-influx](https://github.com/numbat-metrics/numbat-influx): an InfluxDB 0.9+ output sink for the collector
-* [numbat-redis](https://github.com/npm/numbat-redis): emit some interesting redis stats
-* [numbat-haproxy](https://github.com/npm/numbat-haproxy): watch what your haproxies are up to
-* [numbat-process](https://github.com/npm/numbat-process): emit periodic stats about your node process
+* [numbat-redis](https://github.com/numbat-metrics/numbat-redis): emit some interesting redis stats
+* [numbat-haproxy](https://github.com/numbat-metrics/numbat-haproxy): watch what your haproxies are up to
+* [numbat-process](https://github.com/numbat-metrics/numbat-process): include in your node server to emit periodic stats about it
 
 Design:
 
-- There's a cluster of [InfluxDB](http://influxdb.com)s.
-- Each host runs a [numbat-collector](https://github.com/numbat-metrics/numbat-collector).
-- Each service has a client that sends a heartbeat to `numbat-collector`.
-- Each service also sends interesting datapoints to `numbat-collector`.
-- The per-host collectors send all data to InfluxDB.
+- There's a bunch of [InfluxDB](http://influxdb.com)s sharded by hand to balance out usage. (We haven't been happy with it clustered).
+- Each host with services to be monitored runs a [numbat-collector](https://github.com/numbat-metrics/numbat-collector) listening on a known tcp port. (You can also use udp or websockets.)
+- Each service makes a numbat-emitter client & then emits metrics at will.
+- The per-host collectors send all data to InfluxDB and to any other output you have defined.
 - They also send it to the [numbat-analyzer](https://github.com/numbat-metrics/numbat-analyzer).
-- `numbat-analyzer` analyzes stats & feeds data to InfluxDB.
-- `numbat-analyzer` is also responsible for sending alerts & generating timeseries events for these alerts.
-- A [grafana](http://grafana.org) dashboard shows the data.
-- If this service does its job, you delete your nagios installation.
+- `numbat-analyzer` analyzes stats & also feeds data to InfluxDB.
+- `numbat-analyzer` is also responsible for sending alerts to Pager Duty and to a Slack channel.
+- [grafana](http://grafana.org) dashboards show the data.
+- If this service does its job, you delete your nagios installation. (Except you don't ever, because you have redundant monitoring and monitoring for the monitoring.)
 
 An example setup might look like this, with many service/collector pairs:
 
 ![](diagrams/processing_metrics.png)
 
-NOTE: This is essentially what we run in production at npm, but the documentation for this component is lagging way behind.
+This is what we run in production at npm, only we have over 100 instances running services & sending data in.
 
 ### Data flow
 
@@ -37,8 +38,6 @@ Implications:
 - Dashboard needs to include both visual data (graphs) & current alert status
 - data should probably get tagged with "how to display this" so a new stream of info from numbat can be displayed usefully sans config
 - Dashboard should link to the matching Grafana historical data displays for each metric.
-
-CONSIDER: dashboard data displays *are* grafana, just of a different slice of influxdb data (rotated out regularly?) Dashboard page then becomes grafana with the alert stuff in an iframe or something like that. In this approach, the dashboard service is an extra-complex configurable set of hekad-style rules in javascript instead of Lua.
 
 ### What does a metric data point look like?
 
